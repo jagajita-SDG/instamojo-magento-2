@@ -19,6 +19,7 @@ class Main extends  \Magento\Framework\View\Element\Template
 	 protected $urlBuilder;
 	 private $logger;
 	 protected $response;
+	 protected $responsePayment;
 	 protected $config;
 	 protected $messageManager;
 	 protected $transactionBuilder;
@@ -28,6 +29,7 @@ class Main extends  \Magento\Framework\View\Element\Template
 			OrderFactory $orderFactory,
 			Logger $logger,
 			Http $response,
+			Http  $responsePayment,
 			TransactionBuilder $tb,
 			 \Magento\AdminNotification\Model\Inbox $inbox
 		) {
@@ -39,7 +41,8 @@ class Main extends  \Magento\Framework\View\Element\Template
         $this->config = $context->getScopeConfig();
         $this->transactionBuilder = $tb;
 		$this->logger = $logger;					
-		$this->inbox = $inbox;					
+		$this->inbox = $inbox;
+		$this->responsePayment = $responsePayment;
         
 		$this->urlBuilder = \Magento\Framework\App\ObjectManager::getInstance()
 							->get('Magento\Framework\UrlInterface');
@@ -78,16 +81,36 @@ class Main extends  \Magento\Framework\View\Element\Template
             $payment->setParentTransactionId(null);
             $payment->save();
             $order->save();
- 
-			//var_dump($trn);exit;
-			try{
-				$storeScope = \Magento\Store\Model\ScopeInterface::SCOPE_STORE;
+			
+			    $storeScope = \Magento\Store\Model\ScopeInterface::SCOPE_STORE;
 				$client_id = $this->config->getValue("payment/instamojo/client_id",$storeScope);
 				$client_secret = $this->config->getValue("payment/instamojo/client_secret",$storeScope);
 				$testmode = $this->config->getValue("payment/instamojo/instamojo_testmode",$storeScope);
 				$this->logger->info("Client ID: $client_id | Client Secret : $client_secret | Testmode: $testmode");
 				
+				$payload = Array(
+				  'purpose' => 'for buying',
+				  'amount' => round((int)$order->getGrandTotal(),2),
+				  'name' => $billing->getFirstname() ." ". $billing->getLastname(),
+				  'email' => $billing->getEmail(),
+				  'phone' => $billing->getTelephone(),
+				  'currency' => "INR",
+				  'send_email' => True,
+				  'send_sms' => False,
+				  'transaction_id' => time() ."-". $order->getRealOrderId(),
+				  'redirect_url' => $this->urlBuilder->getUrl("instamojo/redirect"),
+				 'advanced_payment_options' =>False,
+				  'allow_repeated_payments' => False
+				  );
+                $ds = DIRECTORY_SEPARATOR;
+				include __DIR__ . "$ds..$ds/lib/Instamojo.php";
 				
+				$api = new \Instamojo($client_id,$client_secret,$testmode);
+				$responsePayment = $api->requestPayment($payload);
+				//var_dump($responsePayment);
+				//exit;
+			//var_dump($trn);exit;
+			try{
 				$api_data['transaction_id'] = time() ."-". $order->getRealOrderId();
 				$api_data['phone'] = $billing->getTelephone();
 				$api_data['email'] = $billing->getEmail();
@@ -96,16 +119,15 @@ class Main extends  \Magento\Framework\View\Element\Template
 				$api_data['currency'] = "INR";
 				$api_data['redirect_url'] = $this->urlBuilder->getUrl("instamojo/response");
 				$this->logger->info("Date sent for creating order ".print_r($api_data,true));
-				$ds = DIRECTORY_SEPARATOR;
-				include __DIR__ . "$ds..$ds/lib/Instamojo.php";
-				
-				$api = new \Instamojo($client_id,$client_secret,$testmode);
+				$api_data['id'] = $responsePayment->id;
 				$response = $api->createOrderPayment($api_data);
+				//var_dump($response);
+				//exit;
 				$this->logger->info("Response from Server". print_r($response,true));
-				if(isset($response->order ))
+				if(isset($response ))
 				{
-					$this->setAction($response->payment_options->payment_url);
-					$this->checkoutSession->setPaymentRequestId($response->order->id);		
+					$this->setAction($responsePayment->resource_uri);
+					$this->checkoutSession->setPaymentRequestId($response);		
 				}
 			}catch(\CurlException $e){
 				// handle exception related to connection to the sever

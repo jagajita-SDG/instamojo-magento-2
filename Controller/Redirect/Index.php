@@ -11,11 +11,14 @@ class Index extends  \Magento\Framework\App\Action\Action
 		$this->pageFactory = $pageFactory;
         
 		parent::__construct($context);
+		
         					
     }
 
 	public function execute()
 	{
 		 return $this->pageFactory->create();
+		 
 	}
+	
 }

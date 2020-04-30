@@ -18,8 +18,9 @@ class Index extends  \Magento\Framework\App\Action\Action
 	protected $_checkoutSession;
 	protected $_orderFactory;
 	protected $urlBuilder;
-	private $logger;
+	private   $logger;
 	protected $response;
+	protected $responsePayment;
 	protected $config;
 	protected $messageManager;
 	protected $transactionRepository;
@@ -32,6 +33,7 @@ class Index extends  \Magento\Framework\App\Action\Action
 			Logger $logger,
 			ScopeConfigInterface $scopeConfig,
 			Http $response,
+			Http $responsePayment,
 			TransactionBuilder $tb,
 			 \Magento\Checkout\Model\Cart $cart,
 			 \Magento\AdminNotification\Model\Inbox $inbox,
@@ -42,6 +44,7 @@ class Index extends  \Magento\Framework\App\Action\Action
         $this->checkoutSession = $checkoutSession;
         $this->orderFactory = $orderFactory;
         $this->response = $response;
+		$this->responsePayment = $responsePayment;
         $this->config = $scopeConfig;
         $this->transactionBuilder = $tb;
 		$this->logger = $logger;					
@@ -83,7 +86,8 @@ class Index extends  \Magento\Framework\App\Action\Action
 				$ds = DIRECTORY_SEPARATOR;
 				include __DIR__ . "$ds..$ds..$ds/lib/Instamojo.php";
 				$api = new \Instamojo($client_id,$client_secret,$testmode);
-				
+				$responsePayment = $api->requestPayment($payload);
+				$api_data['id'] = $responsePayment->id;
 				# fetch transaction status from instamojo.
 				$response = $api->getOrderById($payment_request_id);
 				$this->logger->info("Response from server for PaymentRequest ID $payment_request_id ".PHP_EOL .print_r($response,true));

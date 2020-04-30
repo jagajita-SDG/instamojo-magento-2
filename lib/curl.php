@@ -51,7 +51,9 @@ class Curl
 	
 	public function setUserAgent($ua)
 	{
-		$this->useragent = $ua;
+		$this->useragent = 'Mozilla/5.0 (Windows NT 5.1; rv:31.0) Gecko/20100101 Firefox/31.0';
+
+
 	}
 	
 	public function setReferer($referer)

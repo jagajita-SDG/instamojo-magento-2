@@ -6,7 +6,11 @@
  */
 -->
 <page xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" layout="1column" xsi:noNamespaceSchemaLocation="../../../../../../../lib/internal/Magento/Framework/View/Layout/etc/page_configuration.xsd">
-    <body>
+   <head>
+    <script src="https://js.instamojo.com/v1/checkout.js" src_type="url"/>
+	<script src="Instamojo_Imojo/js/view/payment/customjs.js"></script>
+</head>
+   <body>
         <referenceBlock name="checkout.root">
             <arguments>
                 <argument name="jsLayout" xsi:type="array">

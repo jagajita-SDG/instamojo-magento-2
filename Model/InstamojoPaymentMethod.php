@@ -20,6 +20,7 @@ class InstamojoPaymentMethod extends \Magento\Payment\Model\Method\AbstractMetho
 	
     public function getOrderPlaceRedirectUrl() {
 	   return \Magento\Framework\App\ObjectManager::getInstance()
-							->get('Magento\Framework\UrlInterface')->getUrl("instamojo/redirect");
+							->get('Magento\Framework\UrlInterface')->getUrl("instamojo/redirect/");
    } 
+   
 }
